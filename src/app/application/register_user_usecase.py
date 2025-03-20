@@ -1,0 +1,56 @@
+import uuid
+from typing import Protocol
+
+from app.application.uow_protocol import UowProtocol
+from app.domain.user import User
+from core.exception import BaseError
+
+
+class UserRepositoryProtocol(Protocol):
+    async def get_user_by_email(
+        self,
+        email: str,
+    ) -> User | None: ...
+    async def create_user(self, user: User) -> None: ...
+
+
+class RepositoryProtocol(Protocol):
+    user_repository: UserRepositoryProtocol
+
+
+class SecurityProtocol(Protocol):
+    def hash_password(
+        self,
+        password: str,
+    ) -> bytes: ...
+
+
+class RegisterUserUsecase:
+    def __init__(
+        self,
+        uow: UowProtocol[RepositoryProtocol],
+        security: SecurityProtocol,
+    ) -> None:
+        self.uow = uow
+        self.security = security
+
+    async def execute(
+        self,
+        admin_id: uuid.UUID,
+        email: str,
+        password: str,
+        username: str,
+    ) -> None:
+        async with self.uow.transaction() as repo:
+            if _ := await repo.user_repository.get_user_by_email(email):
+                raise BaseError(status_code=400, detail="User with this email already exists")
+
+            hashed_password = self.security.hash_password(password)
+            user = User(
+                id=uuid.uuid4(),
+                admin_id=admin_id,
+                name=username,
+                email=email,
+                password=hashed_password,
+            )
+            await repo.user_repository.create_user(user)
