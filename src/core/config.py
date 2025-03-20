@@ -13,26 +13,31 @@ class JwtType(str, Enum):
 
 
 class CustomSettings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+    model_config = SettingsConfigDict(
+        env_file=BASE_DIR / ".env",
+        env_file_encoding="utf-8",
+        extra="allow",
+    )
 
 
 class JwtSettings(CustomSettings):
-    PRIVATE_KEY: str = "SECRET"
-    PUBLIC_KEY: str = "SECRET"
+    PRIVATE_KEY: str = (BASE_DIR / "jwt_certs" / "jwt-private.pem").read_text()
+
+    PUBLIC_KEY: str = (BASE_DIR / "jwt_certs" / "jwt-public.pem").read_text()
+
     ALGORITHM: str = "RS256"
 
 
 class TransactionSettings(CustomSettings):
-    SECRET_KEY: str = "qwdqgf3e23we#$@!#$f3"
+    TRANSACTION_KEY: str = "HELLO"
 
 
 class DataBaseSettings(CustomSettings):
     DB_USER: str = "postgres"
     DB_PASS: str = "0420"
     DB_NAME: str = "account"
-    DB_HOST : str = "localhost"
+    DB_HOST: str = "localhost"
     DB_PORT: str = "5432"
-
 
     @property
     def dsn(self: Self) -> str:

@@ -1,11 +1,10 @@
-import uuid
 from datetime import UTC, datetime, timedelta
 from typing import Self
 
 import bcrypt
 import jwt
 
-from app.application.dto import AdminDto, TokenDto, UserDto
+from app.application.dto import TokenDto
 from app.domain.admin import Admin
 from app.domain.user import User
 from app.schemas.responses import Role
@@ -14,18 +13,18 @@ from core.config import JwtType, settings
 
 class Security:
     def create_jwt(
-            self: Self,
-            user: Admin | User,
-            role: Role,
-            jwt_type: JwtType,
+        self: Self,
+        user: Admin | User,
+        role: Role,
+        jwt_type: JwtType,
     ) -> TokenDto:
         """creating jwt token, extending jti, token_type, expire"""
         expire = 3600 if jwt_type == JwtType.REFRESH else 10
-        expire_at = (datetime.now(UTC) + timedelta(minutes=expire))
+        expire_at = datetime.now(UTC) + timedelta(minutes=expire)
 
         payload = {
             "user_id": str(user.id),
-            "role": Role,
+            "role": role.value,
             "exp": expire_at.timestamp(),
         }
 
@@ -41,9 +40,8 @@ class Security:
             exp=expire_at,
         )
 
-
     def decode_and_verify_jwt(self: Self, token: str) -> TokenDto | None:
-        """ returns None if token is invalid"""
+        """returns None if token is invalid"""
         try:
             payload = jwt.decode(
                 token,
@@ -59,10 +57,9 @@ class Security:
         except jwt.exceptions.PyJWTError:
             return None
 
-
     def hash_password(
-            self: Self,
-            password: str,
+        self: Self,
+        password: str,
     ) -> bytes:
         return bcrypt.hashpw(
             password.encode(),
@@ -70,9 +67,9 @@ class Security:
         )
 
     def check_password(
-            self: Self,
-            correct_password: bytes,
-            checkable_password: bytes,
+        self: Self,
+        correct_password: bytes,
+        checkable_password: bytes,
     ) -> bool:
         return bcrypt.checkpw(
             checkable_password,

@@ -7,6 +7,7 @@ from sqlalchemy.orm import selectinload
 
 from app.domain.admin import Admin
 from app.infrastructure.models.admin_model import AdminModel
+from app.infrastructure.models.user_model import UserModel
 
 
 class AdminRepository:
@@ -19,6 +20,7 @@ class AdminRepository:
         *,
         admin_id: uuid.UUID,
         include_users: bool = False,
+        include_accounts: bool = False,
     ) -> Admin | None: ...
     @overload
     async def get_admin(
@@ -26,19 +28,21 @@ class AdminRepository:
         *,
         email: str,
         include_users: bool = False,
+        include_accounts: bool = False,
     ) -> Admin | None: ...
 
-
     async def get_admin(
-            self,
-            *,
-            admin_id: uuid.UUID | None = None,
-            email: str | None = None,
-            include_users: bool = False,
+        self,
+        *,
+        admin_id: uuid.UUID | None = None,
+        email: str | None = None,
+        include_users: bool = False,
+        include_accounts: bool = False,
     ) -> Admin | None:
-        query = (
-            select(AdminModel)
-        )
+        if include_accounts:
+            include_users = True
+
+        query = select(AdminModel)
         if admin_id:
             query = query.where(AdminModel.id == admin_id)
         elif email:
@@ -47,12 +51,18 @@ class AdminRepository:
             raise ValueError("Either user_id or email must be provided")
 
         if include_users:
-            query = query.options(selectinload(AdminModel.users))
+            if include_accounts:
+                query = query.options(
+                    selectinload(AdminModel.users).selectinload(UserModel.accounts),
+                )
+            else:
+                query = query.options(selectinload(AdminModel.users))
 
         result = await self.session.execute(query)
 
         if admin := result.scalars().first():
-            return admin.to_domain(include_users=include_users)
+            return admin.to_domain(
+                include_users=include_users,
+                include_accounts=include_accounts,
+            )
         return None
-
-

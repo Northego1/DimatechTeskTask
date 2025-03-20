@@ -1,0 +1,52 @@
+version: '3.7'
+
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: psql
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASS}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./docker/db-init:/docker-entrypoint-initdb.d
+    ports:
+      - "${DB_OUTSIDE_PORT}:5432"
+
+  liquibase:
+    image: liquibase/liquibase:latest
+    container_name: liquibase
+    depends_on:
+    - postgres
+    environment:
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASS}
+    volumes:
+      - ./liquibase_:/liquibase/liquibase_
+    command: >
+      liquibase
+      --url=jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}
+      --username=${DB_USER}
+      --password=${DB_PASS}
+      --changeLogFile=/liquibase_/changelog.sql
+      update
+  
+  test_app:
+    build: .
+    container_name: test_app
+    env_file:
+      - ./.env
+    ports:
+      - "${APP_PORT}:8000"
+    depends_on:
+      - postgres
+      - liquibase
+    command: 
+      ["sh", "-c", "chmod +x docker/src.sh && docker/src.sh"]
+volumes:
+  postgres-data:

@@ -13,5 +13,3 @@ class Admin:
     email: str
     password: bytes
     users: list["User"] | None
-
-

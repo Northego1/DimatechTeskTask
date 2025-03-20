@@ -10,6 +10,7 @@ dependencies = [
     "dependency-injector>=4.46.0",
     "fastapi>=0.115.11",
     "fastapi-users[sqlalchemy]>=14.0.1",
+    "gunicorn>=23.0.0",
     "mypy>=1.15.0",
     "pydantic>=2.10.6",
     "pydantic-settings>=2.8.1",
@@ -31,4 +32,8 @@ ignore = [
     "B010", "B009", "SIM117", "EM101",
     "TRY003", "FAST002", "B008", "TID252",
     "SIM102"
-]  
+]
+
+[tool.mypy]
+files = "src/"
+ignore_missing_imports = true

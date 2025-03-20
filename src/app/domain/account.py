@@ -8,13 +8,13 @@ from core.exception import BaseError
 if TYPE_CHECKING:
     from app.domain.payment import Payment
 
+
 @dataclass
 class Account:
     id: uuid.UUID
     user_id: uuid.UUID
     balance: Decimal
     payments: list["Payment"] | None
-
 
     def deposit(self, payment: "Payment") -> None:
         if self.id != payment.account_id:
@@ -26,6 +26,3 @@ class Account:
             self.payments = []
 
         self.payments.append(payment)
-
-
-

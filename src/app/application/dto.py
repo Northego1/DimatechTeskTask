@@ -50,10 +50,10 @@ class UserDto:
             id=user.id,
             username=user.name,
             email=user.email,
-            accounts=[
-                AccountDto.from_domain(account) for account in user.accounts
-            ] if user.accounts else None,
-    )
+            accounts=[AccountDto.from_domain(account) for account in user.accounts]
+            if user.accounts
+            else None,
+        )
 
 
 @dataclass
@@ -85,4 +85,3 @@ class PaymentData:
     account_id: uuid.UUID
     user_id: uuid.UUID
     amount: float
-

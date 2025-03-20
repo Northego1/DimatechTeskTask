@@ -18,7 +18,6 @@ class Repository:
     _payment_repository: repo.PaymentRepository | None = None
     _account_repository: repo.AccountRepository | None = None
 
-
     @property
     def user_repository(self: Self) -> repo.UserRepository:
         if not self._user_repository:
@@ -48,7 +47,6 @@ class UnitOfWork:
     def __init__(self, db: DataBase) -> None:
         self.db = db
 
-
     @contextlib.asynccontextmanager
     async def transaction(self: Self) -> AsyncGenerator[Repository, None]:
         async for session in self.db.session_maker():
@@ -56,10 +54,8 @@ class UnitOfWork:
             try:
                 yield Repository(session)
                 await session.commit()
+            except BaseError as e:
+                raise e from e
             except Exception as e:
                 await session.rollback()
                 raise BaseError from e
-
-
-
-

@@ -10,18 +10,22 @@ from core.exception import BaseError
 
 
 class UserRepositoryProtocol(Protocol):
-        async def get_user(
-            self, *, email: str,
-            include_accounts: bool = False,
-            include_payments: bool = False,
+    async def get_user(
+        self,
+        *,
+        email: str,
+        include_accounts: bool = False,
+        include_payments: bool = False,
     ) -> User | None: ...
 
 
 class AdminRepositoryProtocol(Protocol):
-        async def get_admin(
-            self, *, email: str,
-            include_users: bool = False,
-            include_payments: bool = False,
+    async def get_admin(
+        self,
+        *,
+        email: str,
+        include_users: bool = False,
+        include_payments: bool = False,
     ) -> Admin | None: ...
 
 
@@ -32,27 +36,25 @@ class RepositoryProtocol(Protocol):
 
 class SecurityProtocol(Protocol):
     def create_jwt(
-            self,
-            user: Admin | User,
-            role: Role,
-            jwt_type: JwtType,
+        self,
+        user: Admin | User,
+        role: Role,
+        jwt_type: JwtType,
     ) -> TokenDto: ...
-    def check_password(self, correct_password: bytes,
-            checkable_password: bytes) -> bool: ...
+    def check_password(self, correct_password: bytes, checkable_password: bytes) -> bool: ...
 
 
 class LoginUsecase:
     def __init__(
-            self,
-            uow: UowProtocol[RepositoryProtocol],
-            security: SecurityProtocol,
+        self,
+        uow: UowProtocol[RepositoryProtocol],
+        security: SecurityProtocol,
     ) -> None:
         self.uow = uow
         self.security = security
 
-
     async def _auth_user(self, email: str, password: str) -> User:
-         async with self.uow.transaction() as repo:
+        async with self.uow.transaction() as repo:
             if not (user := await repo.user_repository.get_user(email=email)):
                 raise BaseError(status_code=401, detail="Wrong email or password")
 
@@ -62,7 +64,6 @@ class LoginUsecase:
             ):
                 raise BaseError(status_code=401, detail="Wrong email or password")
             return user
-
 
     async def _auth_admin(self, email: str, password: str) -> Admin:
         async with self.uow.transaction() as repo:
@@ -76,11 +77,10 @@ class LoginUsecase:
                 raise BaseError(status_code=401, detail="Wrong email or password")
             return admin
 
-
     async def execute(self, email: str, password: str, role: Role) -> LoginDto:
-        if role == Role.ADMIN:
+        if role == Role.USER:
             entity = await self._auth_user(email, password)
-        elif role == Role.USER:
+        elif role == Role.ADMIN:
             entity = await self._auth_admin(email, password)
 
         refresh_token = self.security.create_jwt(
@@ -98,5 +98,3 @@ class LoginUsecase:
             refresh_jwt=refresh_token.token,
             access_jwt=access_token.token,
         )
-
-

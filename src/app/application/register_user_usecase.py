@@ -7,11 +7,7 @@ from core.exception import BaseError
 
 
 class UserRepositoryProtocol(Protocol):
-    async def get_user_by_email(
-        self,
-        email: str,
-    ) -> User | None: ...
-    async def create_user(self, user: User) -> None: ...
+    async def add_user(self, user: User) -> uuid.UUID | None: ...
 
 
 class RepositoryProtocol(Protocol):
@@ -41,16 +37,14 @@ class RegisterUserUsecase:
         password: str,
         username: str,
     ) -> None:
+        hashed_password = self.security.hash_password(password)
+        user = User(
+            id=uuid.uuid4(),
+            admin_id=admin_id,
+            name=username,
+            email=email,
+            password=hashed_password,
+        )
         async with self.uow.transaction() as repo:
-            if _ := await repo.user_repository.get_user_by_email(email):
+            if not (user_id := await repo.user_repository.add_user(user)):
                 raise BaseError(status_code=400, detail="User with this email already exists")
-
-            hashed_password = self.security.hash_password(password)
-            user = User(
-                id=uuid.uuid4(),
-                admin_id=admin_id,
-                name=username,
-                email=email,
-                password=hashed_password,
-            )
-            await repo.user_repository.create_user(user)

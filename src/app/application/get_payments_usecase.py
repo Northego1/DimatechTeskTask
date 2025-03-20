@@ -27,31 +27,32 @@ class SecurityProtocol(Protocol):
 
 class GetPaymentsUsecase:
     def __init__(
-            self,
-            uow: UowProtocol[RepositoryProtocol],
-            security: SecurityProtocol,
+        self,
+        uow: UowProtocol[RepositoryProtocol],
+        security: SecurityProtocol,
     ) -> None:
         self.uow = uow
         self.security = security
-
 
     async def execute(self, access_token: str) -> list[PaymentDto]:
         if not (token_dto := self.security.decode_and_verify_jwt(access_token)):
             raise BaseError(status_code=401, detail="UNAUTHORIZED")
 
         async with self.uow.transaction() as repo:
-            if not (user := await repo.user_repository.get_user(
-                user_id=token_dto.person_id,
-                include_accounts=True,
-                include_payments=True,
-            )):
+            if not (
+                user := await repo.user_repository.get_user(
+                    user_id=token_dto.person_id,
+                    include_accounts=True,
+                    include_payments=True,
+                )
+            ):
                 raise BaseError(status_code=404, detail="USER_NOT_FOUND")
 
             if user.accounts:
                 return [
                     PaymentDto.from_domain(payment)
                     for account in user.accounts
-                    for payment in account.payments if account.payments # type: ignore
+                    for payment in account.payments
+                    if account.payments  # type: ignore
                 ]
             return []
-

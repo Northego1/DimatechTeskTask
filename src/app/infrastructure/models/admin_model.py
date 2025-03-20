@@ -1,10 +1,8 @@
 import uuid
-from decimal import Decimal
 from typing import TYPE_CHECKING
 
-from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy.types import DECIMAL, UUID, LargeBinary, String
+from sqlalchemy.types import UUID, LargeBinary, String
 
 from app.domain.admin import Admin
 from core.database import Base
@@ -21,14 +19,23 @@ class AdminModel(Base):
     password: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
     email: Mapped[str] = mapped_column(String(128), index=True, unique=True)
 
-    users: Mapped[list["UserModel"]] = relationship("UserModel", back_populates="admin")
+    users: Mapped[list["UserModel"]] = relationship(
+        "app.infrastructure.models.user_model.UserModel",
+        back_populates="admin",
+    )
 
-
-    def to_domain(self, *, include_users: bool = False) -> Admin:
+    def to_domain(
+        self,
+        *,
+        include_users: bool = False,
+        include_accounts: bool = False,
+    ) -> Admin:
         return Admin(
             id=self.id,
             name=self.name,
             email=self.email,
             password=self.password,
-            users=[user.to_domain() for user in self.users] if include_users else None,
+            users=[user.to_domain(include_accounts=include_accounts) for user in self.users]
+            if include_users
+            else None,
         )

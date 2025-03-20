@@ -1,3 +1,4 @@
+# mypy: ignore-errors
 from dependency_injector import containers, providers
 
 from app.application.get_accounts_usecase import GetAccoutsUsecase
@@ -8,7 +9,7 @@ from app.application.login_usecase import LoginUsecase
 from app.application.payment_usecase import PaymentUsecase
 from app.application.payment_verify_usecase import PaymentVerifyUsecase
 from app.application.register_user_usecase import RegisterUserUsecase
-from app.infrastructure.security.security import Security
+from app.infrastructure.utils.security import Security
 from core.config import settings
 from core.database import DataBase
 from core.uow import UnitOfWork
@@ -20,7 +21,6 @@ class Container(containers.DeclarativeContainer):
     db = providers.Singleton(DataBase, settings.db.dsn)
     security = providers.Singleton(Security)
     uow = providers.Singleton(UnitOfWork, db)
-
 
     getme_usecase = providers.Factory(
         GetMeUsecase,
@@ -42,16 +42,19 @@ class Container(containers.DeclarativeContainer):
 
     get_users_usecase = providers.Factory(
         GetUsersUsecase,
+        security=security,
         uow=uow,
     )
 
     get_payments_usecase = providers.Factory(
         GetPaymentsUsecase,
         uow=uow,
+        security=security,
     )
 
     get_accounts_usecase = providers.Factory(
         GetAccoutsUsecase,
+        security=security,
         uow=uow,
     )
 
@@ -63,5 +66,3 @@ class Container(containers.DeclarativeContainer):
         PaymentUsecase,
         uow=uow,
     )
-
-

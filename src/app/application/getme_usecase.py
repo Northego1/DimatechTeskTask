@@ -9,18 +9,22 @@ from core.exception import BaseError
 
 
 class UserRepositoryProtocol(Protocol):
-        async def get_user(
-            self, *, user_id: uuid.UUID,
-            include_accounts: bool = False,
-            include_payments: bool = False,
+    async def get_user(
+        self,
+        *,
+        user_id: uuid.UUID,
+        include_accounts: bool = False,
+        include_payments: bool = False,
     ) -> User | None: ...
 
 
 class AdminRepositoryProtocol(Protocol):
-        async def get_admin(
-            self, *, admin_id: uuid.UUID,
-            include_users: bool = False,
-            include_payments: bool = False,
+    async def get_admin(
+        self,
+        *,
+        admin_id: uuid.UUID,
+        include_users: bool = False,
+        include_payments: bool = False,
     ) -> Admin | None: ...
 
 
@@ -35,21 +39,19 @@ class SecurityProtocol(Protocol):
 
 class GetMeUsecase:
     def __init__(
-            self,
-            uow: UowProtocol[RepositoryProtocol],
-            security: SecurityProtocol,
+        self,
+        uow: UowProtocol[RepositoryProtocol],
+        security: SecurityProtocol,
     ) -> None:
         self.uow = uow
         self.security = security
-
 
     async def get_admin(self, token: str) -> AdminDto:
         if not (token_dto := self.security.decode_and_verify_jwt(token)):
             raise BaseError(status_code=401, detail="UNAUTHORIZED")
 
         async with self.uow.transaction() as repo:
-            admin = await repo.admin_repository.get_admin(
-                admin_id=token_dto.person_id)
+            admin = await repo.admin_repository.get_admin(admin_id=token_dto.person_id)
             if not admin:
                 raise BaseError(status_code=404, detail="NOT_FOUND")
             return AdminDto(
@@ -57,7 +59,6 @@ class GetMeUsecase:
                 name=admin.name,
                 email=admin.email,
             )
-
 
     async def get_user(self, token: str) -> UserDto:
         if not (token_dto := self.security.decode_and_verify_jwt(token)):

@@ -17,13 +17,13 @@ router = APIRouter(
 
 
 class LoginUsecaseProtocol(Protocol):
-    async def execute(self, email: str, password: str) -> LoginDto: ...
+    async def execute(self, email: str, password: str, role: responses.Role) -> LoginDto: ...
 
 
 class CreateUserUsecaseProtocol(Protocol):
     async def execute(
-            self, admin_id: uuid.UUID,
-            email: str, password: str, username: str) -> None: ...
+        self, admin_id: uuid.UUID, email: str, password: str, username: str
+    ) -> None: ...
 
 
 class GetMeUsecaseProtocol(Protocol):
@@ -41,6 +41,7 @@ async def login(
         login_dto = await login_uc.execute(
             email=login_request.email,
             password=login_request.password,
+            role=login_request.role,
         )
         response.set_cookie(
             JwtType.REFRESH.value,
@@ -76,6 +77,7 @@ async def create_user(
                     email=create_user_request.email,
                     password=create_user_request.password,
                 )
+                return
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
     except BaseError as e:
         raise HTTPException(

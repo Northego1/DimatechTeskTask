@@ -15,11 +15,8 @@ class User:
     admin_id: uuid.UUID
     accounts: list["Account"] | None = None
 
-
     def add_account(self, account: "Account") -> None:
         if not self.accounts:
             self.accounts = []
 
         self.accounts.append(account)
-
-

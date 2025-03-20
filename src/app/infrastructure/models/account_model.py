@@ -7,12 +7,11 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.types import DECIMAL, UUID
 
 from app.domain.account import Account
+from app.infrastructure.models.payment_model import PaymentModel
 from core.database import Base
 
 if TYPE_CHECKING:
-    from app.infrastructure.models.payment_model import PaymentModel
     from app.infrastructure.models.user_model import UserModel
-
 
 
 class AccountModel(Base):
@@ -22,18 +21,24 @@ class AccountModel(Base):
     user_id: Mapped[uuid.UUID] = mapped_column(UUID, ForeignKey("users.id"), nullable=False)
     balance: Mapped[Decimal] = mapped_column(DECIMAL, default=0, nullable=False)
 
-    user: Mapped["UserModel"] = relationship("UserModel", back_populates="accounts")
-    payments: Mapped[list["PaymentModel"]] = relationship("PaymentModel", back_populates="account")
-
+    user: Mapped["UserModel"] = relationship(
+        "app.infrastructure.models.user_model.UserModel",
+        back_populates="accounts",
+    )
+    payments: Mapped[list[PaymentModel]] = relationship(
+        "app.infrastructure.models.payment_model.PaymentModel",
+        back_populates="account",
+    )
 
     def to_domain(self, *, include_payments: bool = False) -> Account:
         return Account(
             id=self.id,
             user_id=self.user_id,
             balance=self.balance,
-            payments=[payment.to_domain() for payment in self.payments] if include_payments else None,
+            payments=[payment.to_domain() for payment in self.payments]
+            if include_payments
+            else None,
         )
-
 
     @classmethod
     def from_domain(cls, account: Account) -> "AccountModel":
@@ -41,7 +46,7 @@ class AccountModel(Base):
             id=account.id,
             user_id=account.user_id,
             balance=account.balance,
-            payments=[
-                PaymentModel.from_domain(payment) for payment in account.payments
-                ] if account.payments else [],
+            payments=[PaymentModel.from_domain(payment) for payment in account.payments]
+            if account.payments
+            else [],
         )

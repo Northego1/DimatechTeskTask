@@ -20,8 +20,10 @@ class PaymentModel(Base):
     account_id: Mapped[uuid.UUID] = mapped_column(UUID, ForeignKey("accounts.id"), nullable=False)
     amount: Mapped[Decimal] = mapped_column(DECIMAL, nullable=False)
 
-    account: Mapped["AccountModel"] = relationship("AccountModel", back_populates="payments")
-
+    account: Mapped["AccountModel"] = relationship(
+        "app.infrastructure.models.account_model.AccountModel",
+        back_populates="payments",
+    )
 
     def to_domain(self) -> Payment:
         return Payment(
@@ -29,7 +31,6 @@ class PaymentModel(Base):
             account_id=self.account_id,
             amount=self.amount,
         )
-
 
     @classmethod
     def from_domain(cls, payment: Payment) -> "PaymentModel":
